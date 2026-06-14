@@ -69,10 +69,11 @@ namespace NinjaTrader.NinjaScript.Strategies
                 ContractsPerTrade            = 2;
 
                 // Oliver Velez elephant bar parameters
-                SearchFactor                 = 1.2;
+                SearchFactor                 = 1.1;
                 RangeLookback                = 16;
-                MinBodyPercent               = 65.0;
-                MinElephantBarTicks          = 4;
+                MinBodyPercent               = 55.0;
+                MinElephantBarTicks          = 2;
+                DebugMode                    = true;
 
                 // Entry & exit
                 TargetMultiplier             = 1.0;
@@ -124,6 +125,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (Position.MarketPosition != MarketPosition.Flat)
                 return;
+
+            if (DebugMode && CurrentBar % 50 == 0)
+                LogMessage(string.Format("SCANNING | Bar #{0} | Time: {1} | Close: {2}", CurrentBar, Time[0], Close[0]));
 
             if (IsElephantBar())
             {
@@ -202,15 +206,8 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (totalRange <= 0)
                 return false;
 
-            // Oliver Velez body requirement: body must be >= MinBodyPercent of total range
             double bodyPercent = (bodySize / totalRange) * 100.0;
-            if (bodyPercent < MinBodyPercent)
-                return false;
-
-            // Check minimum tick threshold
             double rangeInTicks = totalRange / TickSize;
-            if (rangeInTicks < MinElephantBarTicks)
-                return false;
 
             // Calculate average RANGE of previous candles
             double avgRange = 0;
@@ -226,6 +223,22 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (validBars > 0)
                 avgRange /= validBars;
+
+            double avgRangeTicks = avgRange / TickSize;
+            double factor = avgRange > 0 ? totalRange / avgRange : 0;
+
+            // Debug: log every bullish candle's stats
+            if (DebugMode && rangeInTicks >= 4)
+                LogMessage(string.Format("BULLISH BAR | Range: {0:F0} ticks | Body: {1:F0}% | Factor: {2:F2}x (need {3:F2}) | AvgRange: {4:F0} ticks",
+                    rangeInTicks, bodyPercent, factor, SearchFactor, avgRangeTicks));
+
+            // Body must be >= MinBodyPercent of total range
+            if (bodyPercent < MinBodyPercent)
+                return false;
+
+            // Check minimum tick threshold
+            if (rangeInTicks < MinElephantBarTicks)
+                return false;
 
             // Oliver Velez search factor: current range must exceed avgRange * SearchFactor
             if (avgRange > 0 && totalRange < avgRange * SearchFactor)
@@ -404,6 +417,10 @@ namespace NinjaTrader.NinjaScript.Strategies
         [NinjaScriptProperty]
         [Display(Name = "Enable Strategy", Description = "Master on/off switch for the strategy", Order = 17, GroupName = "6. Control")]
         public bool EnableStrategy { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Debug Mode", Description = "Show detailed log messages in Output window for troubleshooting", Order = 18, GroupName = "6. Control")]
+        public bool DebugMode { get; set; }
 
         #endregion
     }
