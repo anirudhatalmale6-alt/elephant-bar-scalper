@@ -35,7 +35,6 @@ namespace NinjaTrader.NinjaScript.Strategies
         private Order entryOrder;
         private Order stopOrder;
         private Order targetOrder;
-        private bool elephantBarDetected;
         private double elephantBarHigh;
         private double elephantBarLow;
         private double elephantBarClose;
@@ -70,9 +69,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                 ContractsPerTrade            = 2;
 
                 // Oliver Velez elephant bar parameters
-                SearchFactor                 = 1.3;
+                SearchFactor                 = 1.2;
                 RangeLookback                = 16;
-                MinBodyPercent               = 70.0;
+                MinBodyPercent               = 65.0;
                 MinElephantBarTicks          = 4;
 
                 // Entry & exit
@@ -105,7 +104,6 @@ namespace NinjaTrader.NinjaScript.Strategies
                 dailyLossHit = false;
                 strategyEnabled = EnableStrategy;
                 lastTradeDate = DateTime.MinValue;
-                elephantBarDetected = false;
             }
         }
 
@@ -128,32 +126,14 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (Position.MarketPosition != MarketPosition.Flat)
                 return;
 
-            // Check for confirmation entry: previous bar was an elephant bar,
-            // current bar's close exceeds the elephant bar's close (body breakout)
-            if (elephantBarDetected)
-            {
-                elephantBarDetected = false;
-
-                if (Close[0] > elephantBarClose)
-                {
-                    EnterBullishTrade();
-                    return;
-                }
-                else
-                {
-                    LogMessage(string.Format("CONFIRMATION FAILED | Current close {0} did not exceed elephant bar close {1}", Close[0], elephantBarClose));
-                }
-            }
-
-            // Detect elephant bar on current bar (trade on next bar confirmation)
             if (IsElephantBar())
             {
-                elephantBarDetected = true;
                 elephantBarHigh = High[0];
                 elephantBarLow = Low[0];
                 elephantBarClose = Close[0];
                 elephantBarOpen = Open[0];
                 elephantBarBodySize = Close[0] - Open[0];
+                EnterBullishTrade();
             }
         }
 
@@ -165,7 +145,6 @@ namespace NinjaTrader.NinjaScript.Strategies
                 tradesToday = 0;
                 dailyTargetHit = false;
                 dailyLossHit = false;
-                elephantBarDetected = false;
                 lastTradeDate = Time[0].Date;
                 LogMessage("New trading day started: " + Time[0].Date.ToShortDateString());
             }
