@@ -83,12 +83,11 @@ namespace NinjaTrader.NinjaScript.Strategies
                 DailyMaxLoss                 = 300.0;
                 MaxTradesPerDay              = 10;
 
-                // New York session filter
+                // Session filter
+                UseSessionFilter             = false;
                 EnableNYSession              = true;
                 NYSessionStart               = DateTime.Parse("09:30", System.Globalization.CultureInfo.InvariantCulture);
                 NYSessionEnd                 = DateTime.Parse("15:45", System.Globalization.CultureInfo.InvariantCulture);
-
-                // Asian session filter
                 EnableAsianSession           = true;
                 AsianSessionStart            = DateTime.Parse("18:00", System.Globalization.CultureInfo.InvariantCulture);
                 AsianSessionEnd              = DateTime.Parse("02:00", System.Globalization.CultureInfo.InvariantCulture);
@@ -152,6 +151,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private bool IsWithinTradingHours()
         {
+            if (!UseSessionFilter)
+                return true;
+
             int currentMinutes = Time[0].Hour * 60 + Time[0].Minute;
 
             if (EnableNYSession)
@@ -366,6 +368,10 @@ namespace NinjaTrader.NinjaScript.Strategies
         [Range(1, 100)]
         [Display(Name = "Max Trades Per Day", Description = "Maximum number of trades allowed per day", Order = 10, GroupName = "4. Risk Management")]
         public int MaxTradesPerDay { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Use Session Filter", Description = "When OFF, bot trades any time. When ON, only trades during selected sessions.", Order = 10, GroupName = "5. Session Filter")]
+        public bool UseSessionFilter { get; set; }
 
         [NinjaScriptProperty]
         [Display(Name = "Enable NY Session", Description = "Trade during New York session", Order = 11, GroupName = "5. Session Filter")]
