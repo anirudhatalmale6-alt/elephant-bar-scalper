@@ -84,9 +84,15 @@ namespace NinjaTrader.NinjaScript.Strategies
                 DailyMaxLoss                 = 300.0;
                 MaxTradesPerDay              = 10;
 
-                // Session filter
-                SessionStartTime             = DateTime.Parse("09:30", System.Globalization.CultureInfo.InvariantCulture);
-                SessionEndTime               = DateTime.Parse("15:45", System.Globalization.CultureInfo.InvariantCulture);
+                // New York session filter
+                EnableNYSession              = true;
+                NYSessionStart               = DateTime.Parse("09:30", System.Globalization.CultureInfo.InvariantCulture);
+                NYSessionEnd                 = DateTime.Parse("15:45", System.Globalization.CultureInfo.InvariantCulture);
+
+                // Asian session filter
+                EnableAsianSession           = true;
+                AsianSessionStart            = DateTime.Parse("18:00", System.Globalization.CultureInfo.InvariantCulture);
+                AsianSessionEnd              = DateTime.Parse("02:00", System.Globalization.CultureInfo.InvariantCulture);
 
                 // Control
                 EnableStrategy               = true;
@@ -168,10 +174,34 @@ namespace NinjaTrader.NinjaScript.Strategies
         private bool IsWithinTradingHours()
         {
             int currentMinutes = Time[0].Hour * 60 + Time[0].Minute;
-            int startMinutes = SessionStartTime.Hour * 60 + SessionStartTime.Minute;
-            int endMinutes = SessionEndTime.Hour * 60 + SessionEndTime.Minute;
 
-            return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+            if (EnableNYSession)
+            {
+                int nyStart = NYSessionStart.Hour * 60 + NYSessionStart.Minute;
+                int nyEnd = NYSessionEnd.Hour * 60 + NYSessionEnd.Minute;
+                if (currentMinutes >= nyStart && currentMinutes <= nyEnd)
+                    return true;
+            }
+
+            if (EnableAsianSession)
+            {
+                int asianStart = AsianSessionStart.Hour * 60 + AsianSessionStart.Minute;
+                int asianEnd = AsianSessionEnd.Hour * 60 + AsianSessionEnd.Minute;
+
+                // Asian session crosses midnight (e.g. 18:00 - 02:00)
+                if (asianStart > asianEnd)
+                {
+                    if (currentMinutes >= asianStart || currentMinutes <= asianEnd)
+                        return true;
+                }
+                else
+                {
+                    if (currentMinutes >= asianStart && currentMinutes <= asianEnd)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private bool IsElephantBar()
@@ -359,17 +389,35 @@ namespace NinjaTrader.NinjaScript.Strategies
         public int MaxTradesPerDay { get; set; }
 
         [NinjaScriptProperty]
-        [PropertyEditor("NinjaTrader.Gui.Tools.TimeEditorKey")]
-        [Display(Name = "Session Start Time", Description = "Trading window start (ET)", Order = 11, GroupName = "5. Session Filter")]
-        public DateTime SessionStartTime { get; set; }
+        [Display(Name = "Enable NY Session", Description = "Trade during New York session", Order = 11, GroupName = "5. Session Filter")]
+        public bool EnableNYSession { get; set; }
 
         [NinjaScriptProperty]
         [PropertyEditor("NinjaTrader.Gui.Tools.TimeEditorKey")]
-        [Display(Name = "Session End Time", Description = "Trading window end (ET)", Order = 12, GroupName = "5. Session Filter")]
-        public DateTime SessionEndTime { get; set; }
+        [Display(Name = "NY Session Start", Description = "New York session start (ET)", Order = 12, GroupName = "5. Session Filter")]
+        public DateTime NYSessionStart { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Enable Strategy", Description = "Master on/off switch for the strategy", Order = 13, GroupName = "6. Control")]
+        [PropertyEditor("NinjaTrader.Gui.Tools.TimeEditorKey")]
+        [Display(Name = "NY Session End", Description = "New York session end (ET)", Order = 13, GroupName = "5. Session Filter")]
+        public DateTime NYSessionEnd { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Enable Asian Session", Description = "Trade during Asian session", Order = 14, GroupName = "5. Session Filter")]
+        public bool EnableAsianSession { get; set; }
+
+        [NinjaScriptProperty]
+        [PropertyEditor("NinjaTrader.Gui.Tools.TimeEditorKey")]
+        [Display(Name = "Asian Session Start", Description = "Asian session start (ET)", Order = 15, GroupName = "5. Session Filter")]
+        public DateTime AsianSessionStart { get; set; }
+
+        [NinjaScriptProperty]
+        [PropertyEditor("NinjaTrader.Gui.Tools.TimeEditorKey")]
+        [Display(Name = "Asian Session End", Description = "Asian session end (ET)", Order = 16, GroupName = "5. Session Filter")]
+        public DateTime AsianSessionEnd { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Enable Strategy", Description = "Master on/off switch for the strategy", Order = 17, GroupName = "6. Control")]
         public bool EnableStrategy { get; set; }
 
         #endregion
